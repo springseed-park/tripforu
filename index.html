@@ -693,17 +693,15 @@
             </div>
 
             <form>
-                <!-- City Selection -->
+                <!-- Departure and Destination -->
                 <div class="form-group">
-                    <label class="form-label" for="city">도시 선택</label>
-                    <select class="form-select" id="city">
-                        <option value="">도시를 선택하세요</option>
-                        <option value="seoul" selected>서울</option>
-                        <option value="busan">부산</option>
-                        <option value="jeju">제주</option>
-                        <option value="daejeon">대전</option>
-                        <option value="daegu">대구</option>
-                    </select>
+                    <label class="form-label" for="departure">출발지</label>
+                    <input type="text" class="form-input" id="departure" placeholder="예: 대전" value="대전">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="destination">도착지</label>
+                    <input type="text" class="form-input" id="destination" placeholder="예: 서울" value="서울">
                 </div>
 
                 <!-- Travel Dates -->
@@ -711,23 +709,27 @@
                     <label class="form-label">여행 기간</label>
                     <div class="date-time-group">
                         <div>
-                            <input type="date" class="form-input" value="2025-11-17">
+                            <label class="form-label" style="font-size: 12px; margin-bottom: 4px;">시작일</label>
+                            <input type="date" class="form-input" id="start-date" value="2025-11-17">
                         </div>
                         <div>
-                            <input type="date" class="form-input" value="2025-11-19">
+                            <label class="form-label" style="font-size: 12px; margin-bottom: 4px;">종료일</label>
+                            <input type="date" class="form-input" id="end-date" value="2025-11-19">
                         </div>
                     </div>
                 </div>
 
                 <!-- Travel Times -->
                 <div class="form-group">
-                    <label class="form-label">활동 시간</label>
+                    <label class="form-label">여행 시간</label>
                     <div class="date-time-group">
                         <div>
-                            <input type="time" class="form-input" value="09:00">
+                            <label class="form-label" style="font-size: 12px; margin-bottom: 4px;">출발 시간</label>
+                            <input type="time" class="form-input" id="start-time" value="09:00">
                         </div>
                         <div>
-                            <input type="time" class="form-input" value="18:00">
+                            <label class="form-label" style="font-size: 12px; margin-bottom: 4px;">도착 시간</label>
+                            <input type="time" class="form-input" id="end-time" value="18:00">
                         </div>
                     </div>
                 </div>
@@ -739,7 +741,7 @@
                         <button type="button" class="transport-btn active">자차</button>
                         <button type="button" class="transport-btn">버스</button>
                         <button type="button" class="transport-btn">KTX/기차</button>
-                        <button type="button" class="transport-btn">보행기</button>
+                        <button type="button" class="transport-btn">도보</button>
                     </div>
                 </div>
 
@@ -1143,7 +1145,56 @@
         }
 
         async function generateItineraryAPI(preferences, days = 3, weather = 'sunny') {
+            // Get form values
+            const departure = document.getElementById('departure').value || '대전';
+            const destination = document.getElementById('destination').value || '서울';
+            const startDate = document.getElementById('start-date').value || '2025-11-17';
+            const endDate = document.getElementById('end-date').value || '2025-11-19';
+            const startTime = document.getElementById('start-time').value || '09:00';
+            const endTime = document.getElementById('end-time').value || '18:00';
+            const transport = state.transport || '자차';
+            const interests = document.getElementById('interests').value || '';
+            const notes = document.getElementById('notes').value || '';
+
             try {
+                // Try Gemini AI first
+                const aiResponse = await fetch(`${API_URL}/api/generate-itinerary-ai`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        departure,
+                        destination,
+                        start_date: startDate,
+                        end_date: endDate,
+                        start_time: startTime,
+                        end_time: endTime,
+                        transport,
+                        preferences,
+                        interests,
+                        notes,
+                        weather
+                    })
+                });
+
+                if (aiResponse.ok) {
+                    const data = await aiResponse.json();
+                    if (data.error) {
+                        console.warn('Gemini API error, falling back to basic algorithm:', data.error);
+                        throw new Error(data.error);
+                    }
+                    console.log('✅ Gemini AI로 일정 생성 완료');
+                    return data.days;
+                }
+
+                // Fallback to basic algorithm
+                throw new Error('AI API failed');
+
+            } catch (error) {
+                console.log('⚠️  AI 사용 불가, 기본 알고리즘 사용');
+
+                // Fallback to basic algorithm
                 const response = await fetch(`${API_URL}/api/generate-itinerary`, {
                     method: 'POST',
                     headers: {
@@ -1155,10 +1206,6 @@
                 if (!response.ok) throw new Error('Failed to generate itinerary');
                 const data = await response.json();
                 return data.days;
-            } catch (error) {
-                console.error('Error generating itinerary:', error);
-                // Fallback to local generation
-                return generateItineraryLocal();
             }
         }
 
