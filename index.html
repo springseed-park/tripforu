@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trip For U - 나만의 여행 플래너</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ===== Global Reset & Base Styles ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #1F2937;
+            background-color: #F9FAFB;
+        }
+
+        /* ===== Layout Structure ===== */
+        .dashboard-container {
+            display: flex;
+            flex-direction: row;
+            min-height: 100vh;
+        }
+
+        /* ===== Sidebar Styles ===== */
+        .sidebar {
+            width: 375px;
+            background-color: #FFFFFF;
+            border-right: 1px solid #E5E7EB;
+            padding: 32px;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            margin-bottom: 32px;
+        }
+
+        .sidebar-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2563EB;
+            margin-bottom: 4px;
+        }
+
+        .sidebar-header p {
+            font-size: 14px;
+            color: #6B7280;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #6B7280;
+            margin-bottom: 8px;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1px solid #E5E7EB;
+            border-radius: 4px;
+            background-color: #FFFFFF;
+            color: #1F2937;
+            font-family: inherit;
+            transition: border-color 0.3s, background-color 0.3s;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: #2563EB;
+            background-color: #F9FAFB;
+        }
+
+        .form-textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .date-time-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        /* Transport Button Group */
+        .transport-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .transport-btn {
+            padding: 10px 16px;
+            font-size: 14px;
+            border: 1px solid #E5E7EB;
+            border-radius: 4px;
+            background-color: #FFFFFF;
+            color: #1F2937;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .transport-btn:hover {
+            background-color: #F9FAFB;
+            border-color: #2563EB;
+        }
+
+        .transport-btn.active {
+            background-color: #2563EB;
+            color: #FFFFFF;
+            border-color: #2563EB;
+        }
+
+        /* Slider Styles */
+        .slider-group {
+            margin-bottom: 16px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .slider-label span {
+            font-size: 12px;
+            color: #6B7280;
+        }
+
+        .slider-label .slider-value {
+            font-weight: 600;
+            color: #2563EB;
+        }
+
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #E5E7EB;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #2563EB;
+            cursor: pointer;
+        }
+
+        .slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #2563EB;
+            cursor: pointer;
+            border: none;
+        }
+
+        /* Primary Button */
+        .btn-primary {
+            width: 100%;
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #FFFFFF;
+            background-color: #2563EB;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            font-family: inherit;
+        }
+
+        .btn-primary:hover {
+            background-color: #1D4ED8;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        /* ===== Main Content Area ===== */
+        .main-content {
+            flex: 1;
+            padding: 32px;
+            overflow-y: auto;
+        }
+
+        /* Main Header */
+        .main-header {
+            background-color: #FFFFFF;
+            padding: 24px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            border: 1px solid #E5E7EB;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .header-top h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1F2937;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-secondary {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1F2937;
+            background-color: transparent;
+            border: 1px solid #E5E7EB;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .btn-secondary:hover {
+            background-color: #F9FAFB;
+            border-color: #2563EB;
+            color: #2563EB;
+        }
+
+        .header-date {
+            font-size: 14px;
+            color: #6B7280;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 24px;
+            border-bottom: 2px solid #E5E7EB;
+            margin-bottom: 24px;
+            background-color: #FFFFFF;
+            padding: 16px 24px 0;
+            border-radius: 8px 8px 0 0;
+            border: 1px solid #E5E7EB;
+            border-bottom: none;
+        }
+
+        .tab {
+            padding: 12px 16px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #6B7280;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.3s;
+            background: none;
+            border-left: none;
+            border-right: none;
+            border-top: none;
+            font-family: inherit;
+        }
+
+        .tab:hover {
+            color: #2563EB;
+        }
+
+        .tab.active {
+            color: #2563EB;
+            border-bottom-color: #2563EB;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Schedule Cards */
+        .schedule-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .schedule-card {
+            background-color: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s, transform 0.2s;
+        }
+
+        .schedule-card:hover {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .card-time {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .time-badge {
+            background-color: #F3F4F6;
+            color: #6B7280;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .travel-time {
+            font-size: 13px;
+            color: #6B7280;
+        }
+
+        .card-badges {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-weather {
+            background-color: #DBEAFE;
+            color: #1E40AF;
+        }
+
+        .badge-fatigue {
+            background-color: #FEF3C7;
+            color: #92400E;
+        }
+
+        .card-body {
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1F2937;
+            margin-bottom: 12px;
+        }
+
+        .card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .tag {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .tag-red {
+            background-color: #FEE2E2;
+            color: #DC2626;
+        }
+
+        .tag-blue {
+            background-color: #DBEAFE;
+            color: #0891B2;
+        }
+
+        .tag-green {
+            background-color: #D1FAE5;
+            color: #059669;
+        }
+
+        .card-description {
+            font-size: 14px;
+            color: #4B5563;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .card-link {
+            color: #2563EB;
+            font-size: 14px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .card-link:hover {
+            color: #1D4ED8;
+            text-decoration: underline;
+        }
+
+        .card-footer {
+            padding-top: 12px;
+            border-top: 1px solid #E5E7EB;
+            font-size: 13px;
+            color: #6B7280;
+        }
+
+        /* ===== Responsive Design ===== */
+
+        /* Tablet (768px - 1023px) */
+        @media (max-width: 1023px) and (min-width: 768px) {
+            .sidebar {
+                width: 300px;
+                padding: 24px;
+            }
+
+            .main-content {
+                padding: 24px;
+            }
+        }
+
+        /* Mobile (768px and below) */
+        @media (max-width: 767px) {
+            .dashboard-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                max-height: 500px;
+                border-right: none;
+                border-bottom: 1px solid #E5E7EB;
+                padding: 24px;
+            }
+
+            .main-content {
+                padding: 20px;
+            }
+
+            .main-header {
+                padding: 16px;
+            }
+
+            .header-top {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-top h2 {
+                font-size: 18px;
+            }
+
+            .header-actions {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+
+            .btn-secondary {
+                flex: 1;
+                min-width: 120px;
+            }
+
+            .tabs {
+                padding: 12px 16px 0;
+                overflow-x: auto;
+                flex-wrap: nowrap;
+            }
+
+            .tab {
+                padding: 10px 12px;
+                font-size: 14px;
+                white-space: nowrap;
+            }
+
+            .schedule-card {
+                padding: 16px;
+            }
+
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .card-title {
+                font-size: 16px;
+            }
+
+            .transport-buttons {
+                grid-template-columns: 1fr;
+            }
+
+            .date-time-group {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Very small mobile (480px and below) */
+        @media (max-width: 480px) {
+            .sidebar {
+                padding: 16px;
+            }
+
+            .main-content {
+                padding: 16px;
+            }
+
+            .card-time {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>Trip For U</h1>
+                <p>나만의 맞춤 여행 플래너</p>
+            </div>
+
+            <form>
+                <!-- City Selection -->
+                <div class="form-group">
+                    <label class="form-label" for="city">도시 선택</label>
+                    <select class="form-select" id="city">
+                        <option value="">도시를 선택하세요</option>
+                        <option value="seoul" selected>서울</option>
+                        <option value="busan">부산</option>
+                        <option value="jeju">제주</option>
+                        <option value="daejeon">대전</option>
+                        <option value="daegu">대구</option>
+                    </select>
+                </div>
+
+                <!-- Travel Dates -->
+                <div class="form-group">
+                    <label class="form-label">여행 기간</label>
+                    <div class="date-time-group">
+                        <div>
+                            <input type="date" class="form-input" value="2025-11-17">
+                        </div>
+                        <div>
+                            <input type="date" class="form-input" value="2025-11-19">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Travel Times -->
+                <div class="form-group">
+                    <label class="form-label">활동 시간</label>
+                    <div class="date-time-group">
+                        <div>
+                            <input type="time" class="form-input" value="09:00">
+                        </div>
+                        <div>
+                            <input type="time" class="form-input" value="18:00">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transport Method -->
+                <div class="form-group">
+                    <label class="form-label">이동 수단</label>
+                    <div class="transport-buttons">
+                        <button type="button" class="transport-btn active">자차</button>
+                        <button type="button" class="transport-btn">버스</button>
+                        <button type="button" class="transport-btn">KTX/기차</button>
+                        <button type="button" class="transport-btn">보행기</button>
+                    </div>
+                </div>
+
+                <!-- Preference Sliders -->
+                <div class="form-group">
+                    <label class="form-label">취향 비중</label>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>맛집</span>
+                            <span class="slider-value">70%</span>
+                        </div>
+                        <input type="range" class="slider" min="0" max="100" value="70">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>관광</span>
+                            <span class="slider-value">50%</span>
+                        </div>
+                        <input type="range" class="slider" min="0" max="100" value="50">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>쇼핑</span>
+                            <span class="slider-value">30%</span>
+                        </div>
+                        <input type="range" class="slider" min="0" max="100" value="30">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>카페/휴식</span>
+                            <span class="slider-value">40%</span>
+                        </div>
+                        <input type="range" class="slider" min="0" max="100" value="40">
+                    </div>
+                </div>
+
+                <!-- Interests -->
+                <div class="form-group">
+                    <label class="form-label" for="interests">관심사 및 선호사항</label>
+                    <textarea class="form-textarea" id="interests" placeholder="예: 한식 선호, 걷기 좋아함, 역사적인 장소 관심"></textarea>
+                </div>
+
+                <!-- Notes -->
+                <div class="form-group">
+                    <label class="form-label" for="notes">추가 요청사항</label>
+                    <textarea class="form-textarea" id="notes" placeholder="예: 주차 가능한 곳 위주로, 아이와 함께 가기 좋은 곳"></textarea>
+                </div>
+
+                <!-- Generate Button -->
+                <button type="button" class="btn-primary">여행 일정 생성</button>
+            </form>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <div class="main-header">
+                <div class="header-top">
+                    <h2>서울 2박 3일 자차 이용 맛집 & 문화 탐방</h2>
+                    <div class="header-actions">
+                        <button class="btn-secondary">PDF 저장</button>
+                        <button class="btn-secondary">일정 재구성</button>
+                    </div>
+                </div>
+                <p class="header-date">2025년 11월 17일 - 11월 19일</p>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active">1일차</button>
+                <button class="tab">2일차</button>
+                <button class="tab">3일차</button>
+            </div>
+
+            <!-- Tab Content - Day 1 -->
+            <div class="tab-content active">
+                <div class="schedule-cards">
+                    <!-- Card 1 -->
+                    <div class="schedule-card">
+                        <div class="card-header">
+                            <div class="card-time">
+                                <span class="time-badge">09:00 - 11:00 (120분)</span>
+                                <span class="travel-time">서울 시내 이동 30분</span>
+                            </div>
+                            <div class="card-badges">
+                                <span class="badge badge-weather">맑음</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h3 class="card-title">대전에서 서울로 이동</h3>
+                            <div class="card-tags">
+                                <span class="tag tag-red">#여행_시작</span>
+                                <span class="tag tag-blue">#편의점</span>
+                            </div>
+                            <p class="card-description">
+                                자차로 대전에서 서울까지 2시간 소요됩니다. 경부고속도로를 이용하여, 서울 시청 부근 도착을 기준으로 합니다.
+                                중간에 휴게소에서 휴식을 취하며 편의점에서 간식을 준비하세요.
+                            </p>
+                            <a href="#" class="card-link">경로 확인하기 →</a>
+                        </div>
+                    </div>
+
+                    <!-- Card 2 -->
+                    <div class="schedule-card">
+                        <div class="card-header">
+                            <div class="card-time">
+                                <span class="time-badge">11:30 - 12:30 (60분)</span>
+                                <span class="travel-time">이동 10분</span>
+                            </div>
+                            <div class="card-badges">
+                                <span class="badge badge-fatigue">피로도 낮음</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h3 class="card-title">봉피양 방이점</h3>
+                            <div class="card-tags">
+                                <span class="tag tag-red">#가족친화</span>
+                                <span class="tag tag-blue">#돼지갈비</span>
+                                <span class="tag tag-green">#주차_가능</span>
+                            </div>
+                            <p class="card-description">
+                                봉피양 돼지갈비는 서울에서 유명한 맛집입니다. 점심 식사를 즐기기에 좋으며, 넉넉한 주차 공간이 마련되어 있습니다.
+                                맛있는 돼지갈비와 함께 다양한 반찬을 즐기실 수 있습니다.
+                            </p>
+                            <a href="#" class="card-link">지도에서 보기 →</a>
+                        </div>
+                        <div class="card-footer">
+                            예상 비용: 1인당 15,000원
+                        </div>
+                    </div>
+
+                    <!-- Card 3 -->
+                    <div class="schedule-card">
+                        <div class="card-header">
+                            <div class="card-time">
+                                <span class="time-badge">12:40 - 15:10 (150분)</span>
+                                <span class="travel-time">차량 이동 15분</span>
+                            </div>
+                            <div class="card-badges">
+                                <span class="badge badge-weather">맑음</span>
+                                <span class="badge badge-fatigue">피로도 보통</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h3 class="card-title">롯데월드타워 & 서울스카이</h3>
+                            <div class="card-tags">
+                                <span class="tag tag-red">#랜드마크</span>
+                                <span class="tag tag-blue">#관광명소</span>
+                                <span class="tag tag-green">#전망대</span>
+                            </div>
+                            <p class="card-description">
+                                서울의 랜드마크에서 탁 트인 전경을 감상하세요. 롯데월드타워 지하 주차장을 이용할 수 있습니다.
+                                123층 전망대에서 서울의 아름다운 풍경을 한눈에 담아보세요. 날씨가 맑으면 인천까지 보입니다.
+                            </p>
+                            <a href="#" class="card-link">지도에서 보기 →</a>
+                        </div>
+                        <div class="card-footer">
+                            입장료: 성인 27,000원 | 주차: 첫 2시간 무료
+                        </div>
+                    </div>
+
+                    <!-- Card 4 -->
+                    <div class="schedule-card">
+                        <div class="card-header">
+                            <div class="card-time">
+                                <span class="time-badge">15:30 - 16:30 (60분)</span>
+                                <span class="travel-time">도보 5분</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h3 class="card-title">성수동 카페 탐방</h3>
+                            <div class="card-tags">
+                                <span class="tag tag-blue">#카페</span>
+                                <span class="tag tag-green">#디저트</span>
+                                <span class="tag tag-red">#포토스팟</span>
+                            </div>
+                            <p class="card-description">
+                                힙한 성수동 카페거리에서 여유로운 커피 타임을 즐겨보세요.
+                                다양한 감성 카페들이 모여있어 인스타그램 감성 사진도 남길 수 있습니다.
+                            </p>
+                            <a href="#" class="card-link">주변 카페 찾기 →</a>
+                        </div>
+                        <div class="card-footer">
+                            예상 비용: 1인당 8,000원
+                        </div>
+                    </div>
+
+                    <!-- Card 5 -->
+                    <div class="schedule-card">
+                        <div class="card-header">
+                            <div class="card-time">
+                                <span class="time-badge">18:00 - 19:30 (90분)</span>
+                                <span class="travel-time">차량 이동 20분</span>
+                            </div>
+                            <div class="card-badges">
+                                <span class="badge badge-fatigue">피로도 높음</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h3 class="card-title">남산타워 야경 감상</h3>
+                            <div class="card-tags">
+                                <span class="tag tag-red">#야경</span>
+                                <span class="tag tag-blue">#데이트코스</span>
+                                <span class="tag tag-green">#추억</span>
+                            </div>
+                            <p class="card-description">
+                                하루의 마무리로 남산타워에서 아름다운 서울 야경을 감상하세요.
+                                케이블카를 타고 올라가면 더욱 로맨틱한 분위기를 즐길 수 있습니다. 사랑의 자물쇠도 잊지 마세요.
+                            </p>
+                            <a href="#" class="card-link">지도에서 보기 →</a>
+                        </div>
+                        <div class="card-footer">
+                            케이블카: 왕복 11,000원 | 타워 입장료: 16,000원
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content - Day 2 -->
+            <div class="tab-content">
+                <div class="schedule-cards">
+                    <div class="schedule-card">
+                        <div class="card-header">
+                            <div class="card-time">
+                                <span class="time-badge">09:00 - 10:30 (90분)</span>
+                            </div>
+                            <div class="card-badges">
+                                <span class="badge badge-weather">맑음</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h3 class="card-title">경복궁 & 국립민속박물관</h3>
+                            <div class="card-tags">
+                                <span class="tag tag-red">#역사</span>
+                                <span class="tag tag-blue">#문화</span>
+                                <span class="tag tag-green">#한복체험</span>
+                            </div>
+                            <p class="card-description">
+                                조선 시대의 대표 궁궐인 경복궁을 둘러보며 한국의 역사를 체험해보세요.
+                                한복을 입고 방문하면 무료 입장이 가능합니다.
+                            </p>
+                            <a href="#" class="card-link">지도에서 보기 →</a>
+                        </div>
+                        <div class="card-footer">
+                            입장료: 3,000원 | 한복 착용 시 무료
+                        </div>
+                    </div>
+
+                    <div class="schedule-card">
+                        <div class="card-header">
+                            <div class="card-time">
+                                <span class="time-badge">11:00 - 12:30 (90분)</span>
+                                <span class="travel-time">도보 10분</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h3 class="card-title">북촌 한옥마을 산책</h3>
+                            <div class="card-tags">
+                                <span class="tag tag-red">#한옥</span>
+                                <span class="tag tag-blue">#포토존</span>
+                                <span class="tag tag-green">#전통</span>
+                            </div>
+                            <p class="card-description">
+                                전통 한옥이 잘 보존된 북촌에서 고즈넉한 산책을 즐겨보세요.
+                                사진 촬영하기 좋은 명소들이 많아 추억을 남기기 완벽합니다.
+                            </p>
+                            <a href="#" class="card-link">추천 포토 스팟 보기 →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content - Day 3 -->
+            <div class="tab-content">
+                <div class="schedule-cards">
+                    <div class="schedule-card">
+                        <div class="card-header">
+                            <div class="card-time">
+                                <span class="time-badge">09:00 - 11:00 (120분)</span>
+                            </div>
+                            <div class="card-badges">
+                                <span class="badge badge-weather">흐림</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h3 class="card-title">코엑스 스타필드 & 별마당 도서관</h3>
+                            <div class="card-tags">
+                                <span class="tag tag-red">#쇼핑</span>
+                                <span class="tag tag-blue">#도서관</span>
+                                <span class="tag tag-green">#실내</span>
+                            </div>
+                            <p class="card-description">
+                                아시아 최대 규모의 지하 쇼핑몰 코엑스에서 쇼핑과 함께 별마당 도서관을 방문해보세요.
+                                독특한 건축미가 돋보이는 도서관에서 인생 사진을 남겨보세요.
+                            </p>
+                            <a href="#" class="card-link">지도에서 보기 →</a>
+                        </div>
+                        <div class="card-footer">
+                            무료 입장 | 주차: 시간당 3,000원
+                        </div>
+                    </div>
+
+                    <div class="schedule-card">
+                        <div class="card-header">
+                            <div class="card-time">
+                                <span class="time-badge">14:00 - 16:00 (120분)</span>
+                                <span class="travel-time">차량 이동 120분</span>
+                            </div>
+                            <div class="card-badges">
+                                <span class="badge badge-fatigue">피로도 높음</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h3 class="card-title">서울에서 대전으로 복귀</h3>
+                            <div class="card-tags">
+                                <span class="tag tag-red">#귀가</span>
+                                <span class="tag tag-blue">#여행_마무리</span>
+                            </div>
+                            <p class="card-description">
+                                즐거웠던 서울 여행을 마무리하고 대전으로 복귀합니다.
+                                경부고속도로를 이용하여 안전하게 귀가하세요. 휴게소에서 마지막 휴식을 취하며 여행의 여운을 즐겨보세요.
+                            </p>
+                            <a href="#" class="card-link">경로 확인하기 →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
