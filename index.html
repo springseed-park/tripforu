@@ -1104,6 +1104,9 @@
     </div>
 
     <script>
+        // ===== API Configuration =====
+        const API_URL = window.location.origin;  // Use same origin as page
+
         // ===== Global State =====
         const state = {
             preferences: {
@@ -1115,11 +1118,52 @@
             currentTab: 0,
             transport: '자차',
             weather: 'sunny',
-            arrivedActivities: []
+            arrivedActivities: [],
+            activities: []  // Will be loaded from API
         };
 
-        // ===== Sample Activity Database =====
-        const activityDatabase = {
+        // ===== API Functions =====
+        async function fetchActivities(category = null, indoor = null) {
+            let url = `${API_URL}/api/activities`;
+            const params = new URLSearchParams();
+
+            if (category) params.append('category', category);
+            if (indoor !== null) params.append('indoor', indoor);
+
+            if (params.toString()) url += '?' + params.toString();
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Failed to fetch activities');
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching activities:', error);
+                return [];
+            }
+        }
+
+        async function generateItineraryAPI(preferences, days = 3, weather = 'sunny') {
+            try {
+                const response = await fetch(`${API_URL}/api/generate-itinerary`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ preferences, days, weather })
+                });
+
+                if (!response.ok) throw new Error('Failed to generate itinerary');
+                const data = await response.json();
+                return data.days;
+            } catch (error) {
+                console.error('Error generating itinerary:', error);
+                // Fallback to local generation
+                return generateItineraryLocal();
+            }
+        }
+
+        // ===== Fallback Activity Database (if API fails) =====
+        const activityDatabaseFallback = {
             food: [
                 {
                     title: '봉피양 방이점',
@@ -1372,15 +1416,30 @@
         }
 
         // ===== Itinerary Generation =====
-        function generateItinerary() {
+        async function generateItinerary() {
+            // Try API first
+            try {
+                const days = await generateItineraryAPI(state.preferences, 3, state.weather);
+                return days;
+            } catch (error) {
+                console.error('API failed, using local generation', error);
+                return generateItineraryLocal();
+            }
+        }
+
+        function generateItineraryLocal() {
+            // Fallback local generation
             const activities = [];
+            const activitySource = state.activities.length > 0 ?
+                groupActivitiesByCategory(state.activities) :
+                activityDatabaseFallback;
 
             // Get weighted activities based on preferences
             Object.keys(state.preferences).forEach(category => {
                 const weight = state.preferences[category];
-                const count = Math.round(weight / 25); // Roughly 4 activities max per category
+                const count = Math.round(weight / 25);
 
-                const categoryActivities = activityDatabase[category] || [];
+                const categoryActivities = activitySource[category] || [];
                 for (let i = 0; i < Math.min(count, categoryActivities.length); i++) {
                     activities.push({ ...categoryActivities[i], score: weight * Math.random() });
                 }
@@ -1389,13 +1448,23 @@
             // Sort by score
             activities.sort((a, b) => b.score - a.score);
 
-            // Distribute across 3 days (5 activities per day max)
+            // Distribute across 3 days
             const days = [[], [], []];
             activities.slice(0, 15).forEach((activity, index) => {
                 days[index % 3].push(activity);
             });
 
             return days;
+        }
+
+        function groupActivitiesByCategory(activities) {
+            const grouped = { food: [], sight: [], shopping: [], cafe: [] };
+            activities.forEach(activity => {
+                if (grouped[activity.category]) {
+                    grouped[activity.category].push(activity);
+                }
+            });
+            return grouped;
         }
 
         function renderItinerary(days) {
@@ -1471,33 +1540,14 @@
         }
 
         // ===== Weather-based Alternative Course =====
-        function generateWeatherAlternative() {
+        async function generateWeatherAlternative() {
             if (state.weather === 'sunny') {
-                // Switch to rainy - prioritize indoor activities
+                // Switch to rainy
                 state.weather = 'rainy';
                 document.getElementById('weather-icon').textContent = '🌧️';
                 document.getElementById('weather-condition').textContent = '비';
                 document.getElementById('weather-temp').textContent = '18°C';
                 document.getElementById('btn-weather-alternative').textContent = '☀️ 맑은 날씨';
-
-                // Filter only indoor activities
-                const indoorActivities = [];
-                Object.values(activityDatabase).forEach(categoryActivities => {
-                    categoryActivities.forEach(activity => {
-                        if (activity.indoor) {
-                            indoorActivities.push({ ...activity, score: Math.random() });
-                        }
-                    });
-                });
-
-                indoorActivities.sort((a, b) => b.score - a.score);
-
-                const days = [[], [], []];
-                indoorActivities.slice(0, 15).forEach((activity, index) => {
-                    days[index % 3].push(activity);
-                });
-
-                renderItinerary(days);
             } else {
                 // Switch back to sunny
                 state.weather = 'sunny';
@@ -1505,11 +1555,11 @@
                 document.getElementById('weather-condition').textContent = '맑음';
                 document.getElementById('weather-temp').textContent = '22°C';
                 document.getElementById('btn-weather-alternative').textContent = '☔ 비오는 날씨';
-
-                // Regenerate normal itinerary
-                const days = generateItinerary();
-                renderItinerary(days);
             }
+
+            // Regenerate itinerary with new weather
+            const days = await generateItinerary();
+            renderItinerary(days);
         }
 
         // ===== Arrival Button & Time Recalculation =====
@@ -1554,20 +1604,20 @@
         // ===== Event Listeners =====
         document.getElementById('btn-pdf').addEventListener('click', generatePDF);
 
-        document.getElementById('btn-regenerate').addEventListener('click', () => {
-            const days = generateItinerary();
+        document.getElementById('btn-regenerate').addEventListener('click', async () => {
+            const days = await generateItinerary();
             renderItinerary(days);
         });
 
         document.getElementById('btn-weather-alternative').addEventListener('click', generateWeatherAlternative);
 
-        document.querySelector('.btn-primary').addEventListener('click', () => {
-            const days = generateItinerary();
+        document.querySelector('.btn-primary').addEventListener('click', async () => {
+            const days = await generateItinerary();
             renderItinerary(days);
         });
 
         // ===== Initialize =====
-        function init() {
+        async function init() {
             initSliders();
             initTabs();
             initTransportButtons();
@@ -1575,6 +1625,14 @@
 
             // Initial fatigue display
             updateFatigueDisplay(42);
+
+            // Load activities from API
+            try {
+                state.activities = await fetchActivities();
+                console.log(`Loaded ${state.activities.length} activities from API`);
+            } catch (error) {
+                console.error('Failed to load activities from API, using fallback data', error);
+            }
         }
 
         // Run when DOM is ready
