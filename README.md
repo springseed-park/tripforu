@@ -35,14 +35,37 @@
 pip install -r requirements.txt
 ```
 
-### 2. 데이터베이스 초기화 (샘플 데이터)
+### 2. Gemini API 키 설정 (선택사항, AI 기능 사용 시)
+
+```bash
+# .env.example을 복사하여 .env 파일 생성
+cp .env.example .env
+
+# .env 파일을 열어서 Gemini API 키 입력
+# GEMINI_API_KEY=your_api_key_here
+```
+
+**Gemini API 키 발급 방법:**
+1. https://aistudio.google.com/app/apikey 접속
+2. Google 계정으로 로그인
+3. "Create API Key" 클릭
+4. 생성된 키를 `.env` 파일에 입력
+
+**참고:** Gemini API 키가 없어도 기본 알고리즘으로 일정 생성이 가능합니다.
+
+### 3. 데이터베이스 초기화 (샘플 데이터)
 
 ```bash
 # 서버 실행 후 다음 명령 실행
 curl -X POST http://localhost:5000/api/seed-data
 ```
 
-### 3. 서버 실행
+**PowerShell에서:**
+```powershell
+Invoke-WebRequest -Uri http://localhost:5000/api/seed-data -Method POST
+```
+
+### 4. 서버 실행
 
 ```bash
 python app.py
@@ -50,7 +73,7 @@ python app.py
 
 서버가 `http://localhost:5000`에서 실행됩니다.
 
-### 4. 브라우저에서 접속
+### 5. 브라우저에서 접속
 
 ```
 http://localhost:5000
@@ -80,7 +103,8 @@ http://localhost:5000
 
 ### 일정 생성
 
-- `POST /api/generate-itinerary` - AI 기반 일정 자동 생성
+- `POST /api/generate-itinerary` - 기본 알고리즘 기반 일정 생성
+- `POST /api/generate-itinerary-ai` - Gemini AI 기반 일정 생성 (API 키 필요)
 
 ### 데이터
 

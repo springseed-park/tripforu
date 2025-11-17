@@ -6,9 +6,24 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
+import json
+from dotenv import load_dotenv
+import google.generativeai as genai
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
+
+# Configure Gemini API
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    gemini_model = genai.GenerativeModel('gemini-pro')
+else:
+    gemini_model = None
+    print("⚠️  Warning: GEMINI_API_KEY not found. AI features will be disabled.")
 
 # Database configuration
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -297,6 +312,101 @@ def generate_itinerary():
         days[day_index].append(item['activity'])
 
     return jsonify({'days': days})
+
+
+@app.route('/api/generate-itinerary-ai', methods=['POST'])
+def generate_itinerary_ai():
+    """Gemini AI 기반 일정 생성"""
+    if not gemini_model:
+        return jsonify({'error': 'Gemini API가 설정되지 않았습니다. GEMINI_API_KEY를 .env 파일에 추가해주세요.'}), 503
+
+    data = request.json
+
+    # 사용자 입력 데이터
+    departure = data.get('departure', '대전')
+    destination = data.get('destination', '서울')
+    start_date = data.get('start_date', '2025-11-17')
+    end_date = data.get('end_date', '2025-11-19')
+    start_time = data.get('start_time', '09:00')
+    end_time = data.get('end_time', '18:00')
+    transport = data.get('transport', '자차')
+    preferences = data.get('preferences', {})
+    interests = data.get('interests', '')
+    notes = data.get('notes', '')
+
+    # Gemini 프롬프트 생성
+    prompt = f"""
+당신은 전문 여행 플래너입니다. 다음 정보를 바탕으로 상세한 여행 일정을 JSON 형식으로 생성해주세요.
+
+**여행 정보:**
+- 출발지: {departure}
+- 도착지: {destination}
+- 여행 기간: {start_date} ~ {end_date}
+- 하루 활동 시간: {start_time} ~ {end_time}
+- 이동 수단: {transport}
+- 취향 비중: 맛집 {preferences.get('food', 25)}%, 관광 {preferences.get('sight', 25)}%, 쇼핑 {preferences.get('shopping', 25)}%, 카페/휴식 {preferences.get('cafe', 25)}%
+- 관심사: {interests if interests else '없음'}
+- 추가 요청사항: {notes if notes else '없음'}
+
+**요구사항:**
+1. 취향 비중에 따라 활동을 분배하세요 (맛집이 높으면 맛집 많이, 관광이 높으면 관광지 많이)
+2. 실제로 존재하는 {destination}의 유명한 장소들을 포함하세요
+3. 이동 시간과 거리를 고려하여 효율적으로 배치하세요
+4. 각 활동은 현실적인 소요 시간을 가져야 합니다
+5. 날씨, 피로도, 시간대(식사 시간 등)를 고려하세요
+
+**출력 형식 (반드시 유효한 JSON으로만 응답):**
+{{
+  "days": [
+    [
+      {{
+        "title": "활동명",
+        "category": "food|sight|shopping|cafe",
+        "duration": 60,
+        "description": "상세 설명",
+        "tags": ["#태그1", "#태그2", "#태그3"],
+        "indoor": true,
+        "footer": "예상 비용: 1인당 15,000원"
+      }}
+    ]
+  ]
+}}
+
+반드시 JSON 형식으로만 응답하고, 다른 설명이나 텍스트는 포함하지 마세요.
+"""
+
+    try:
+        # Gemini API 호출
+        response = gemini_model.generate_content(prompt)
+        response_text = response.text.strip()
+
+        # JSON 파싱 시도
+        # Gemini가 마크다운 코드 블록으로 감싸서 보낼 수 있으므로 처리
+        if response_text.startswith('```json'):
+            response_text = response_text[7:]  # ```json 제거
+        if response_text.startswith('```'):
+            response_text = response_text[3:]  # ``` 제거
+        if response_text.endswith('```'):
+            response_text = response_text[:-3]  # ``` 제거
+
+        response_text = response_text.strip()
+
+        # JSON 파싱
+        result = json.loads(response_text)
+
+        return jsonify(result)
+
+    except json.JSONDecodeError as e:
+        print(f"JSON 파싱 오류: {e}")
+        print(f"응답 텍스트: {response_text}")
+        return jsonify({
+            'error': 'AI 응답을 파싱할 수 없습니다.',
+            'raw_response': response_text[:500]  # 처음 500자만
+        }), 500
+
+    except Exception as e:
+        print(f"Gemini API 오류: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/seed-data', methods=['POST'])
