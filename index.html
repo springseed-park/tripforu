@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         /* ===== Global Reset & Base Styles ===== */
         * {
@@ -451,6 +452,130 @@
             color: #6B7280;
         }
 
+        /* Fatigue Gauge */
+        .fatigue-gauge-container {
+            margin-bottom: 24px;
+            padding: 16px;
+            background-color: #F9FAFB;
+            border-radius: 8px;
+            border: 1px solid #E5E7EB;
+        }
+
+        .fatigue-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #6B7280;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .fatigue-value {
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .fatigue-value.low {
+            color: #10B981;
+        }
+
+        .fatigue-value.medium {
+            color: #F59E0B;
+        }
+
+        .fatigue-value.high {
+            color: #EF4444;
+        }
+
+        .fatigue-bar {
+            width: 100%;
+            height: 12px;
+            background-color: #E5E7EB;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .fatigue-fill {
+            height: 100%;
+            transition: width 0.5s ease, background-color 0.5s ease;
+            border-radius: 6px;
+        }
+
+        .fatigue-fill.low {
+            background-color: #10B981;
+        }
+
+        .fatigue-fill.medium {
+            background-color: #F59E0B;
+        }
+
+        .fatigue-fill.high {
+            background-color: #EF4444;
+        }
+
+        /* Weather Display */
+        .weather-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #6B7280;
+        }
+
+        .weather-icon {
+            font-size: 24px;
+        }
+
+        /* Arrival Button */
+        .btn-arrival {
+            margin-top: 12px;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+            background-color: #10B981;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .btn-arrival:hover {
+            background-color: #059669;
+        }
+
+        .btn-arrival:disabled {
+            background-color: #9CA3AF;
+            cursor: not-allowed;
+        }
+
+        .schedule-card.arrived {
+            background-color: #F0FDF4;
+            border-color: #10B981;
+        }
+
+        .schedule-card.current {
+            background-color: #FEF3C7;
+            border-color: #F59E0B;
+        }
+
+        /* Input number for sliders */
+        .slider-input {
+            width: 50px;
+            padding: 2px 6px;
+            font-size: 12px;
+            border: 1px solid #E5E7EB;
+            border-radius: 3px;
+            text-align: center;
+        }
+
+        .slider-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         /* ===== Responsive Design ===== */
 
         /* Tablet (768px - 1023px) */
@@ -620,38 +745,61 @@
 
                 <!-- Preference Sliders -->
                 <div class="form-group">
-                    <label class="form-label">취향 비중</label>
+                    <label class="form-label">취향 비중 (총합: <span id="total-percentage">100</span>%)</label>
 
                     <div class="slider-group">
                         <div class="slider-label">
                             <span>맛집</span>
-                            <span class="slider-value">70%</span>
+                            <div class="slider-controls">
+                                <span class="slider-value" data-slider="food">40%</span>
+                                <input type="number" class="slider-input" min="0" max="100" value="40" data-input="food">
+                            </div>
                         </div>
-                        <input type="range" class="slider" min="0" max="100" value="70">
+                        <input type="range" class="slider" min="0" max="100" value="40" data-slider="food">
                     </div>
 
                     <div class="slider-group">
                         <div class="slider-label">
                             <span>관광</span>
-                            <span class="slider-value">50%</span>
+                            <div class="slider-controls">
+                                <span class="slider-value" data-slider="sight">30%</span>
+                                <input type="number" class="slider-input" min="0" max="100" value="30" data-input="sight">
+                            </div>
                         </div>
-                        <input type="range" class="slider" min="0" max="100" value="50">
+                        <input type="range" class="slider" min="0" max="100" value="30" data-slider="sight">
                     </div>
 
                     <div class="slider-group">
                         <div class="slider-label">
                             <span>쇼핑</span>
-                            <span class="slider-value">30%</span>
+                            <div class="slider-controls">
+                                <span class="slider-value" data-slider="shopping">15%</span>
+                                <input type="number" class="slider-input" min="0" max="100" value="15" data-input="shopping">
+                            </div>
                         </div>
-                        <input type="range" class="slider" min="0" max="100" value="30">
+                        <input type="range" class="slider" min="0" max="100" value="15" data-slider="shopping">
                     </div>
 
                     <div class="slider-group">
                         <div class="slider-label">
                             <span>카페/휴식</span>
-                            <span class="slider-value">40%</span>
+                            <div class="slider-controls">
+                                <span class="slider-value" data-slider="cafe">15%</span>
+                                <input type="number" class="slider-input" min="0" max="100" value="15" data-input="cafe">
+                            </div>
                         </div>
-                        <input type="range" class="slider" min="0" max="100" value="40">
+                        <input type="range" class="slider" min="0" max="100" value="15" data-slider="cafe">
+                    </div>
+                </div>
+
+                <!-- Fatigue Gauge -->
+                <div class="fatigue-gauge-container">
+                    <div class="fatigue-label">
+                        <span>예상 피로도</span>
+                        <span class="fatigue-value low" id="fatigue-value">42점 (낮음)</span>
+                    </div>
+                    <div class="fatigue-bar">
+                        <div class="fatigue-fill low" id="fatigue-fill" style="width: 42%"></div>
                     </div>
                 </div>
 
@@ -677,13 +825,19 @@
             <!-- Header -->
             <div class="main-header">
                 <div class="header-top">
-                    <h2>서울 2박 3일 자차 이용 맛집 & 문화 탐방</h2>
+                    <h2 id="trip-title">서울 2박 3일 자차 이용 맛집 & 문화 탐방</h2>
                     <div class="header-actions">
-                        <button class="btn-secondary">PDF 저장</button>
-                        <button class="btn-secondary">일정 재구성</button>
+                        <div class="weather-display">
+                            <span class="weather-icon" id="weather-icon">☀️</span>
+                            <span id="weather-temp">22°C</span>
+                            <span id="weather-condition">맑음</span>
+                        </div>
+                        <button class="btn-secondary" id="btn-weather-alternative">☔ 비오는 날씨</button>
+                        <button class="btn-secondary" id="btn-pdf">📄 PDF 저장</button>
+                        <button class="btn-secondary" id="btn-regenerate">🔄 일정 재구성</button>
                     </div>
                 </div>
-                <p class="header-date">2025년 11월 17일 - 11월 19일</p>
+                <p class="header-date" id="trip-dates">2025년 11월 17일 - 11월 19일</p>
             </div>
 
             <!-- Tabs -->
@@ -948,5 +1102,487 @@
             </div>
         </main>
     </div>
+
+    <script>
+        // ===== Global State =====
+        const state = {
+            preferences: {
+                food: 40,
+                sight: 30,
+                shopping: 15,
+                cafe: 15
+            },
+            currentTab: 0,
+            transport: '자차',
+            weather: 'sunny',
+            arrivedActivities: []
+        };
+
+        // ===== Sample Activity Database =====
+        const activityDatabase = {
+            food: [
+                {
+                    title: '봉피양 방이점',
+                    duration: 60,
+                    category: 'food',
+                    tags: ['#가족친화', '#돼지갈비', '#주차_가능'],
+                    description: '봉피양 돼지갈비는 서울에서 유명한 맛집입니다. 점심 식사를 즐기기에 좋으며, 넉넉한 주차 공간이 마련되어 있습니다.',
+                    footer: '예상 비용: 1인당 15,000원',
+                    indoor: true
+                },
+                {
+                    title: '광장시장 먹거리',
+                    duration: 90,
+                    category: 'food',
+                    tags: ['#전통시장', '#길거리음식', '#다양한메뉴'],
+                    description: '마약김밥, 빈대떡, 육회 등 다양한 전통 먹거리를 한 곳에서 즐길 수 있습니다.',
+                    footer: '예상 비용: 1인당 20,000원',
+                    indoor: false
+                },
+                {
+                    title: '을지로 노가리골목',
+                    duration: 120,
+                    category: 'food',
+                    tags: ['#야경', '#노가리', '#분위기'],
+                    description: '서울의 레트로 감성이 물씬 풍기는 을지로에서 노가리와 함께 저녁을 즐겨보세요.',
+                    footer: '예상 비용: 1인당 25,000원',
+                    indoor: false
+                }
+            ],
+            sight: [
+                {
+                    title: '롯데월드타워 & 서울스카이',
+                    duration: 150,
+                    category: 'sight',
+                    tags: ['#랜드마크', '#관광명소', '#전망대'],
+                    description: '서울의 랜드마크에서 탁 트인 전경을 감상하세요. 123층 전망대에서 서울의 아름다운 풍경을 한눈에 담아보세요.',
+                    footer: '입장료: 성인 27,000원 | 주차: 첫 2시간 무료',
+                    indoor: true
+                },
+                {
+                    title: '경복궁 & 국립민속박물관',
+                    duration: 90,
+                    category: 'sight',
+                    tags: ['#역사', '#문화', '#한복체험'],
+                    description: '조선 시대의 대표 궁궐인 경복궁을 둘러보며 한국의 역사를 체험해보세요.',
+                    footer: '입장료: 3,000원 | 한복 착용 시 무료',
+                    indoor: false
+                },
+                {
+                    title: '남산타워 야경 감상',
+                    duration: 90,
+                    category: 'sight',
+                    tags: ['#야경', '#데이트코스', '#추억'],
+                    description: '케이블카를 타고 올라가 남산타워에서 서울 야경을 감상하세요.',
+                    footer: '케이블카: 왕복 11,000원 | 타워 입장료: 16,000원',
+                    indoor: false
+                },
+                {
+                    title: '북촌 한옥마을 산책',
+                    duration: 90,
+                    category: 'sight',
+                    tags: ['#한옥', '#포토존', '#전통'],
+                    description: '전통 한옥이 잘 보존된 북촌에서 고즈넉한 산책을 즐겨보세요.',
+                    footer: '',
+                    indoor: false
+                }
+            ],
+            shopping: [
+                {
+                    title: '코엑스 스타필드 & 별마당 도서관',
+                    duration: 120,
+                    category: 'shopping',
+                    tags: ['#쇼핑', '#도서관', '#실내'],
+                    description: '아시아 최대 규모의 지하 쇼핑몰 코엑스에서 쇼핑과 함께 별마당 도서관을 방문해보세요.',
+                    footer: '무료 입장 | 주차: 시간당 3,000원',
+                    indoor: true
+                },
+                {
+                    title: '명동 쇼핑거리',
+                    duration: 150,
+                    category: 'shopping',
+                    tags: ['#쇼핑', '#화장품', '#패션'],
+                    description: '서울의 대표 쇼핑 거리 명동에서 쇼핑을 즐겨보세요.',
+                    footer: '예상 비용: 개인별 상이',
+                    indoor: false
+                },
+                {
+                    title: '홍대 거리 쇼핑',
+                    duration: 120,
+                    category: 'shopping',
+                    tags: ['#젊은거리', '#개성있는상품', '#버스킹'],
+                    description: '트렌디한 홍대에서 독특한 아이템들을 구경하고 구매해보세요.',
+                    footer: '',
+                    indoor: false
+                }
+            ],
+            cafe: [
+                {
+                    title: '성수동 카페 탐방',
+                    duration: 60,
+                    category: 'cafe',
+                    tags: ['#카페', '#디저트', '#포토스팟'],
+                    description: '힙한 성수동 카페거리에서 여유로운 커피 타임을 즐겨보세요.',
+                    footer: '예상 비용: 1인당 8,000원',
+                    indoor: true
+                },
+                {
+                    title: '이태원 루프탑 카페',
+                    duration: 90,
+                    category: 'cafe',
+                    tags: ['#루프탑', '#뷰맛집', '#낭만'],
+                    description: '이태원의 멋진 루프탑 카페에서 서울 시내를 내려다보며 커피를 즐기세요.',
+                    footer: '예상 비용: 1인당 12,000원',
+                    indoor: true
+                },
+                {
+                    title: '북촌 전통찻집',
+                    duration: 60,
+                    category: 'cafe',
+                    tags: ['#전통차', '#한옥카페', '#힐링'],
+                    description: '한옥을 개조한 전통 찻집에서 조용한 시간을 보내세요.',
+                    footer: '예상 비용: 1인당 10,000원',
+                    indoor: true
+                }
+            ]
+        };
+
+        // ===== Utility Functions =====
+        function getFatigueLevel(score) {
+            if (score <= 30) return 'low';
+            if (score <= 60) return 'medium';
+            return 'high';
+        }
+
+        function getFatigueLevelText(level) {
+            const labels = { low: '낮음', medium: '보통', high: '높음' };
+            return labels[level];
+        }
+
+        function calculateFatigue(activities) {
+            let score = 0;
+            activities.forEach((activity, index) => {
+                // 기본 활동 시간에 따른 피로도
+                score += activity.duration / 30;
+
+                // 카테고리별 피로도
+                if (activity.category === 'sight') score += 5;
+                if (activity.category === 'shopping') score += 3;
+                if (activity.category === 'cafe') score -= 2;
+
+                // 실외 활동 가중치
+                if (!activity.indoor) score += 2;
+
+                // 이동 횟수
+                if (index > 0) score += 1;
+            });
+
+            return Math.min(100, Math.max(0, Math.round(score)));
+        }
+
+        function updateFatigueDisplay(score) {
+            const level = getFatigueLevel(score);
+            const levelText = getFatigueLevelText(level);
+
+            const valueEl = document.getElementById('fatigue-value');
+            const fillEl = document.getElementById('fatigue-fill');
+
+            valueEl.textContent = `${score}점 (${levelText})`;
+            valueEl.className = 'fatigue-value ' + level;
+
+            fillEl.style.width = score + '%';
+            fillEl.className = 'fatigue-fill ' + level;
+        }
+
+        // ===== Slider Synchronization =====
+        function updateSliderValues() {
+            const total = state.preferences.food + state.preferences.sight +
+                         state.preferences.shopping + state.preferences.cafe;
+
+            document.getElementById('total-percentage').textContent = total;
+
+            // Update displays
+            Object.keys(state.preferences).forEach(key => {
+                const value = state.preferences[key];
+                const valueDisplay = document.querySelector(`[data-slider="${key}"]`);
+                const slider = document.querySelector(`input[type="range"][data-slider="${key}"]`);
+                const input = document.querySelector(`input[type="number"][data-input="${key}"]`);
+
+                if (valueDisplay) valueDisplay.textContent = value + '%';
+                if (slider) slider.value = value;
+                if (input) input.value = value;
+            });
+        }
+
+        function initSliders() {
+            // Range sliders
+            document.querySelectorAll('input[type="range"][data-slider]').forEach(slider => {
+                slider.addEventListener('input', (e) => {
+                    const key = e.target.dataset.slider;
+                    state.preferences[key] = parseInt(e.target.value);
+                    updateSliderValues();
+                });
+            });
+
+            // Number inputs
+            document.querySelectorAll('input[type="number"][data-input]').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const key = e.target.dataset.input;
+                    let value = parseInt(e.target.value) || 0;
+                    value = Math.max(0, Math.min(100, value));
+                    state.preferences[key] = value;
+                    updateSliderValues();
+                });
+            });
+        }
+
+        // ===== Tab Switching =====
+        function initTabs() {
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach((tab, index) => {
+                tab.addEventListener('click', () => {
+                    // Remove active class from all
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(tc => tc.classList.remove('active'));
+
+                    // Add active class to clicked tab
+                    tab.classList.add('active');
+                    tabContents[index].classList.add('active');
+
+                    state.currentTab = index;
+                });
+            });
+        }
+
+        // ===== Transport Button Selection =====
+        function initTransportButtons() {
+            const buttons = document.querySelectorAll('.transport-btn');
+
+            buttons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Remove active from all
+                    buttons.forEach(b => b.classList.remove('active'));
+                    // Add active to clicked
+                    button.classList.add('active');
+                    state.transport = button.textContent;
+                });
+            });
+        }
+
+        // ===== Itinerary Generation =====
+        function generateItinerary() {
+            const activities = [];
+
+            // Get weighted activities based on preferences
+            Object.keys(state.preferences).forEach(category => {
+                const weight = state.preferences[category];
+                const count = Math.round(weight / 25); // Roughly 4 activities max per category
+
+                const categoryActivities = activityDatabase[category] || [];
+                for (let i = 0; i < Math.min(count, categoryActivities.length); i++) {
+                    activities.push({ ...categoryActivities[i], score: weight * Math.random() });
+                }
+            });
+
+            // Sort by score
+            activities.sort((a, b) => b.score - a.score);
+
+            // Distribute across 3 days (5 activities per day max)
+            const days = [[], [], []];
+            activities.slice(0, 15).forEach((activity, index) => {
+                days[index % 3].push(activity);
+            });
+
+            return days;
+        }
+
+        function renderItinerary(days) {
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            days.forEach((dayActivities, dayIndex) => {
+                if (!tabContents[dayIndex]) return;
+
+                const scheduleCards = tabContents[dayIndex].querySelector('.schedule-cards');
+                if (!scheduleCards) return;
+
+                scheduleCards.innerHTML = '';
+
+                let currentTime = 9 * 60; // Start at 9:00 AM
+
+                dayActivities.forEach((activity, activityIndex) => {
+                    const startHour = Math.floor(currentTime / 60);
+                    const startMin = currentTime % 60;
+                    const endTime = currentTime + activity.duration;
+                    const endHour = Math.floor(endTime / 60);
+                    const endMin = endTime % 60;
+
+                    const timeStr = `${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')} - ${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')} (${activity.duration}분)`;
+
+                    const travelTime = activityIndex > 0 ? '이동 10분' : '';
+
+                    const fatigueLevel = activity.indoor ? '피로도 낮음' : '피로도 보통';
+
+                    const card = document.createElement('div');
+                    card.className = 'schedule-card';
+                    card.dataset.day = dayIndex;
+                    card.dataset.activity = activityIndex;
+
+                    card.innerHTML = `
+                        <div class="card-header">
+                            <div class="card-time">
+                                <span class="time-badge">${timeStr}</span>
+                                ${travelTime ? `<span class="travel-time">${travelTime}</span>` : ''}
+                            </div>
+                            <div class="card-badges">
+                                <span class="badge badge-fatigue">${fatigueLevel}</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h3 class="card-title">${activity.title}</h3>
+                            <div class="card-tags">
+                                ${activity.tags.map(tag => {
+                                    const colorClass = Math.random() > 0.5 ? 'tag-red' : (Math.random() > 0.5 ? 'tag-blue' : 'tag-green');
+                                    return `<span class="tag ${colorClass}">${tag}</span>`;
+                                }).join('')}
+                            </div>
+                            <p class="card-description">${activity.description}</p>
+                            <a href="#" class="card-link">지도에서 보기 →</a>
+                        </div>
+                        ${activity.footer ? `<div class="card-footer">${activity.footer}</div>` : ''}
+                        <button class="btn-arrival" data-day="${dayIndex}" data-activity="${activityIndex}">✓ 여기 도착했어요</button>
+                    `;
+
+                    scheduleCards.appendChild(card);
+
+                    // Add travel time for next activity
+                    currentTime = endTime + 10;
+                });
+            });
+
+            // Reinitialize arrival buttons
+            initArrivalButtons();
+
+            // Calculate and update fatigue
+            const allActivities = days.flat();
+            const fatigueScore = calculateFatigue(allActivities);
+            updateFatigueDisplay(fatigueScore);
+        }
+
+        // ===== Weather-based Alternative Course =====
+        function generateWeatherAlternative() {
+            if (state.weather === 'sunny') {
+                // Switch to rainy - prioritize indoor activities
+                state.weather = 'rainy';
+                document.getElementById('weather-icon').textContent = '🌧️';
+                document.getElementById('weather-condition').textContent = '비';
+                document.getElementById('weather-temp').textContent = '18°C';
+                document.getElementById('btn-weather-alternative').textContent = '☀️ 맑은 날씨';
+
+                // Filter only indoor activities
+                const indoorActivities = [];
+                Object.values(activityDatabase).forEach(categoryActivities => {
+                    categoryActivities.forEach(activity => {
+                        if (activity.indoor) {
+                            indoorActivities.push({ ...activity, score: Math.random() });
+                        }
+                    });
+                });
+
+                indoorActivities.sort((a, b) => b.score - a.score);
+
+                const days = [[], [], []];
+                indoorActivities.slice(0, 15).forEach((activity, index) => {
+                    days[index % 3].push(activity);
+                });
+
+                renderItinerary(days);
+            } else {
+                // Switch back to sunny
+                state.weather = 'sunny';
+                document.getElementById('weather-icon').textContent = '☀️';
+                document.getElementById('weather-condition').textContent = '맑음';
+                document.getElementById('weather-temp').textContent = '22°C';
+                document.getElementById('btn-weather-alternative').textContent = '☔ 비오는 날씨';
+
+                // Regenerate normal itinerary
+                const days = generateItinerary();
+                renderItinerary(days);
+            }
+        }
+
+        // ===== Arrival Button & Time Recalculation =====
+        function initArrivalButtons() {
+            document.querySelectorAll('.btn-arrival').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const day = parseInt(e.target.dataset.day);
+                    const activity = parseInt(e.target.dataset.activity);
+
+                    const card = e.target.closest('.schedule-card');
+                    card.classList.add('arrived');
+                    e.target.disabled = true;
+                    e.target.textContent = '✓ 도착 완료';
+
+                    // Mark next activity as current
+                    const allCards = document.querySelectorAll(`.schedule-card[data-day="${day}"]`);
+                    allCards.forEach(c => c.classList.remove('current'));
+
+                    if (allCards[activity + 1]) {
+                        allCards[activity + 1].classList.add('current');
+                    }
+
+                    state.arrivedActivities.push({ day, activity });
+                });
+            });
+        }
+
+        // ===== PDF Generation =====
+        function generatePDF() {
+            const element = document.querySelector('.main-content');
+            const options = {
+                margin: 10,
+                filename: 'Trip_For_U_일정표.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+            };
+
+            html2pdf().set(options).from(element).save();
+        }
+
+        // ===== Event Listeners =====
+        document.getElementById('btn-pdf').addEventListener('click', generatePDF);
+
+        document.getElementById('btn-regenerate').addEventListener('click', () => {
+            const days = generateItinerary();
+            renderItinerary(days);
+        });
+
+        document.getElementById('btn-weather-alternative').addEventListener('click', generateWeatherAlternative);
+
+        document.querySelector('.btn-primary').addEventListener('click', () => {
+            const days = generateItinerary();
+            renderItinerary(days);
+        });
+
+        // ===== Initialize =====
+        function init() {
+            initSliders();
+            initTabs();
+            initTransportButtons();
+            updateSliderValues();
+
+            // Initial fatigue display
+            updateFatigueDisplay(42);
+        }
+
+        // Run when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
 </body>
 </html>
